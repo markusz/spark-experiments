@@ -3,6 +3,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 object Experiments {
   def main(args: Array[String]) {
     csvExperiment()
+    textExperiment()
   }
 
   def csvExperiment() = {
