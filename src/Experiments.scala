@@ -1,14 +1,25 @@
+import java.io.File
+import java.net.URL
+import java.nio.charset.Charset
+import java.util
+
+import org.apache.commons.csv.{CSVRecord, CSVFormat, CSVParser}
 import org.apache.spark.{SparkConf, SparkContext}
+
 
 object Experiments {
   def main(args: Array[String]) {
     csvExperiment()
-    textExperiment()
+    //    textExperiment()
   }
 
   def csvExperiment() = {
-    val logFile = "data/R-sample-sets/csv/boot/acme.csv" // Should be some file on your system
-    println(logFile)
+    val sourceFilePath = "./data/R-sample-sets/csv/boot/acme.csv" // Should be some file on your system
+    val asFile = new File(sourceFilePath)
+    val result = CSVParser.parse(asFile, Charset.defaultCharset(), CSVFormat.newFormat(','))
+    val records = result.getRecords
+
+    println(records.get(10).get(3))
   }
 
   def textExperiment() = {
