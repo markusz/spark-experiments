@@ -2,15 +2,22 @@ import java.io.File
 import java.nio.charset.Charset
 
 import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-
+import org.apache.spark.mllib.recommendation.{ALS, Rating, MatrixFactorizationModel}
 
 object Experiment {
   def main(args: Array[String]) {
 
+    Logger.getLogger("org.apache.spark").setLevel(Level.OFF)
     csvExperiment()
     //    textExperiment()
+  }
+
+  def machineLearning() = {
+
   }
 
   def csvExperiment() = {
@@ -30,20 +37,27 @@ object Experiment {
     val data = 1 to 1000
 
     val distData = sc.parallelize(data)
+    distData.cache()
+
+    val sample: RDD[Int] = distData.sample(true, 0.02)
     val filtered = distData.filter(_ < 10).collect()
     val combinations = filtered.combinations(4)
 
     val perms: Iterator[Array[Int]] = filtered.permutations
-    while(perms.hasNext){
-      println(perms.next.deep.mkString(","))
-    }
+    /*
+        while (perms.hasNext) {
+          println(perms.next.deep.mkString(","))
+        }
+    */
 
-    while(combinations.hasNext){
-      println(combinations.next.deep.mkString(","))
-    }
+    /*
+        while (combinations.hasNext) {
+          //println(combinations.next.deep.mkString(","))
+        }
+    */
 
-    println(combinations.map(r => r.deep.mkString(",")))
     println(filtered.mkString(","))
+    println(sample.collect().mkString(","))
   }
 
   def textExperiment() = {
