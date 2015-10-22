@@ -7,33 +7,45 @@ import JSON._
 import spray.json._
 
 object Parsing {
-  def repl(value: String) = {
-    val replaced = value.replaceAll(" \\* ", "").replaceAll("PSD\\\\AdExternBundle\\\\Entity\\\\", "")
-    replaced
-  }
+  private def replaceStrings(value: String) = value.replaceAll(" \\* ", "").replaceAll("PSD\\\\AdExternBundle\\\\Entity\\\\", "")
 
-  def cropResultMap(map: Map[String, Any]): Map[String, Any] = {
+  private def cropResultMap(map: Map[String, Any]): Map[String, Any] = {
     val cleanedMap = map.map({
       case (key, value) =>
-        val cleanedKey: String = key.replaceAll(" \\* ", "")
+        val cleanedKey: String = replaceStrings(key)
 
         value match {
-        case s: Map[String, Any] => cleanedKey -> cropResultMap(value.asInstanceOf[Map[String, Any]])
-        case s: Tuple2[String, Map[String, Any]] => cleanedKey -> (
-          repl(value.asInstanceOf[Tuple2[String, Map[String, Any]]]._1),
-          cropResultMap(value.asInstanceOf[Tuple2[String, Map[String, Any]]]._2))
-        case s: Boolean => cleanedKey -> value
-        case s: Int => cleanedKey -> value
-        case _ => cleanedKey -> value.toString
-      }
+          case s: Map[String, Any] =>
+            val m: Map[String, Any] = value.asInstanceOf[Map[String, Any]]
+            cleanedKey -> cropResultMap(m)
+          //case: (key_1 -> (key_2 -> _)
+          case s: Tuple2[String, Map[String, Any]] =>
+            val tuple: (String, Map[String, Any]) = value.asInstanceOf[Tuple2[String, Map[String, Any]]]
+            val string: String = tuple._1
+            val resultMap: Map[String, Any] = tuple._2
+
+            cleanedKey ->(replaceStrings(string), cropResultMap(resultMap))
+          case s: Boolean => cleanedKey -> value
+          case s: Int => cleanedKey -> value
+          case _ => cleanedKey -> value.toString
+        }
     })
     cleanedMap
   }
 
-  def parsePHPObjectToJSONString(phpObject: String) = {
-    val parsedResultAsMap = PhpUnserializer.parse(phpObject).asInstanceOf[Map[String, Any]]
-    val croppedResultAsMap = cropResultMap(parsedResultAsMap)
+  def parseSerializedPHPObjectToJSONString(phpObject: String): JsValue = {
+    try {
+      val parsedResultAsMap = PhpUnserializer.parse(phpObject).asInstanceOf[Map[String, Any]]
+      val croppedResultAsMap = cropResultMap(parsedResultAsMap)
+      croppedResultAsMap.toJson
+    }
+    catch {
+      case e: Throwable => {
+        println("Cant parse " + phpObject)
+        e.printStackTrace()
+        null
+      }
+    }
 
-    croppedResultAsMap.toJson.compactPrint
   }
 }
